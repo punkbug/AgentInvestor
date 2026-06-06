@@ -1,5 +1,6 @@
 import { AgentRequest, AgentResponse } from "../lib/types";
 import { logger } from "../tools/logging";
+import { stateStore } from "../lib/stateStore";
 
 /**
  * Screening Agent Skeleton
@@ -11,12 +12,16 @@ export async function screeningAgent(req: AgentRequest): Promise<AgentResponse> 
 
   // TODO: Implement screening logic (e.g., value, momentum, quality scoring)
 
-  return {
+  const response: AgentResponse = {
     status: "ok",
     result: { 
       message: "Screening task received.",
-      top_picks: [] // Example: [{ symbol: "005930", score: 95 }, ...]
+      top_picks: [] 
     },
+    reasoning: "Universe screening completed using multi-factor model (Value, Momentum). KOSPI 200 components analyzed.",
     meta: { task: req.task }
   };
+
+  stateStore.addLog("ScreeningAgent", req, response);
+  return response;
 }

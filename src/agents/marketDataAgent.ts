@@ -1,5 +1,6 @@
 import { AgentRequest, AgentResponse, AgentStatus } from "../lib/types";
 import { logger } from "../tools/logging";
+import { stateStore } from "../lib/stateStore";
 import * as marketApis from "../tools/marketApis";
 import * as db from "../tools/db";
 
@@ -83,21 +84,30 @@ export async function marketDataAgent(req: AgentRequest): Promise<AgentResponse>
       results.processedMarkets.push(market);
     }
 
+    // TODO: Add Gemini 3 Flash for automated quality summary/reasoning in future versions.
     const status: AgentStatus = qualityIssues.length > 0 ? "needs_human" : "ok";
+    const reasoning = `Collected data for ${payload.markets.join(", ")}. Saved ${results.savedRecords} records. ${qualityIssues.length} issues identified during QA.`;
 
-    return {
+    const response: AgentResponse = {
       status,
       result: results,
+      reasoning,
       meta: {
         qualityIssues: qualityIssues.length > 0 ? qualityIssues : undefined,
         tradeDate,
       },
     };
+
+    stateStore.addLog("MarketDataAgent", req, response);
+    return response;
   } catch (err: any) {
     logger.logError(prefix, "Error during market data collection", err);
-    return {
+    const errResponse: AgentResponse = {
       status: "error",
       error: err.message,
+      reasoning: `Failure in data collection pipeline: ${err.message}`,
     };
+    stateStore.addLog("MarketDataAgent", req, errResponse);
+    return errResponse;
   }
 }

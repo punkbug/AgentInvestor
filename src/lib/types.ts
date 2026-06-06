@@ -35,6 +35,7 @@ export interface AgentResponse {
   status: AgentStatus;
   result?: any;
   error?: string;
+  reasoning?: string; // 판단 근거 및 추론 과정
   meta?: Record<string, any>;
 }
 

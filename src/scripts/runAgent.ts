@@ -2,41 +2,64 @@ import { supervisor } from "../agents/supervisor";
 import { AgentRequest } from "../lib/types";
 
 /**
- * Test script to run the Supervisor Agent locally.
+ * Test script to run a full sequence of Agents locally.
  * Usage: npx tsx src/scripts/runAgent.ts
  */
 
-async function main() {
-  console.log("=== AI Native Asset Management Agent System - Test Run ===\n");
-
-  const request: AgentRequest = {
-    task: "collect_market_data",
-    payload: {
-      markets: ["KOSPI"],
-      dataTypes: ["price", "investor_flows"],
-      priority: "normal",
-    },
-    context: {
-      userId: "test-user-01",
-      now: new Date(),
-      locale: "ko-KR",
-    },
-  };
-
-  try {
-    const response = await supervisor(request);
-    console.log("\n--- Agent Response ---");
-    console.log(JSON.stringify(response, null, 2));
-  } catch (error) {
-    console.error("Execution failed:", error);
-  }
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * SAFETY & COMPLIANCE NOTICE:
- * 1. 이 코드는 실제 투자 자문이나 매매를 수행하지 않는 개발용/연구용 뼈대 코드입니다.
- * 2. 실 계좌 API 키를 코드에 하드코딩하지 마십시오.
- * 3. 실제 운영에는 별도의 위험관리, 규제준수 검토, 사람 승인 절차가 반드시 필요합니다.
- */
+async function main() {
+  console.log("=== AI Native Asset Management Agent System - Full Sequence Run ===\n");
+
+  const context = {
+    userId: "test-user-01",
+    now: new Date(),
+    locale: "ko-KR",
+  };
+
+  const tasks: AgentRequest[] = [
+    {
+      task: "collect_market_data",
+      payload: { markets: ["KOSPI"], dataTypes: ["price", "investor_flows"] },
+      context
+    },
+    {
+      task: "analyze_news",
+      payload: { symbols: ["005930"], lookbackDays: 1 },
+      context
+    },
+    {
+      task: "screen_universe",
+      payload: { criteria: "value_growth_mix" },
+      context
+    },
+    {
+      task: "build_portfolio",
+      payload: { riskTolerance: "medium" },
+      context
+    },
+    {
+      task: "execute_orders",
+      payload: { simulation: true },
+      context
+    }
+  ];
+
+  for (const request of tasks) {
+    console.log(`\n>>> Executing Task: ${request.task}`);
+    try {
+      const response = await supervisor(request);
+      console.log(`Status: ${response.status}`);
+      console.log(`Reasoning: ${response.reasoning}`);
+      await sleep(1000); // Wait a bit between tasks for dashboard visualization
+    } catch (error) {
+      console.error(`Execution failed for ${request.task}:`, error);
+    }
+  }
+
+  console.log("\n=== Sequence Completed. Check the Dashboard for details. ===");
+}
 
 main().catch(console.error);

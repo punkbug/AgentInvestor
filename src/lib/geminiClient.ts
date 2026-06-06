@@ -11,7 +11,7 @@ const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 /**
  * Returns a Gemini model instance.
  */
-export function getModel(modelName: string = "gemini-1.5-flash"): GenerativeModel {
+export function getModel(modelName: string = "gemini-3-flash"): GenerativeModel {
   if (!genAI) {
     throw new Error("GOOGLE_API_KEY is not set in environment variables.");
   }

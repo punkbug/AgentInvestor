@@ -1,5 +1,6 @@
 import { AgentRequest, AgentResponse } from "../lib/types";
 import { logger } from "../tools/logging";
+import { stateStore } from "../lib/stateStore";
 import { marketDataAgent } from "./marketDataAgent";
 import { newsAgent } from "./newsAgent";
 import { screeningAgent } from "./screeningAgent";
@@ -14,35 +15,48 @@ export async function supervisor(req: AgentRequest): Promise<AgentResponse> {
   const prefix = "[Supervisor]";
   logger.logInfo(prefix, `Routing task: ${req.task}`);
 
+  let response: AgentResponse;
+
   try {
     switch (req.task) {
       case "collect_market_data":
-        return await marketDataAgent(req);
+        response = await marketDataAgent(req);
+        break;
       
       case "analyze_news":
-        return await newsAgent(req);
+        response = await newsAgent(req);
+        break;
       
       case "screen_universe":
-        return await screeningAgent(req);
+        response = await screeningAgent(req);
+        break;
       
       case "build_portfolio":
-        return await portfolioAgent(req);
+        response = await portfolioAgent(req);
+        break;
       
       case "execute_orders":
-        return await executionAgent(req);
+        response = await executionAgent(req);
+        break;
 
       default:
         logger.logWarn(prefix, `Unknown task received: ${req.task}`);
-        return {
+        response = {
           status: "error",
           error: `Unknown task: ${req.task}`,
         };
     }
   } catch (err: any) {
     logger.logError(prefix, `Critical error in supervisor while handling ${req.task}`, err);
-    return {
+    response = {
       status: "error",
       error: `Internal Supervisor Error: ${err.message}`,
     };
   }
+
+  // Record reasoning for Supervisor
+  response.reasoning = response.reasoning || `Routing decision: Task '${req.task}' has been assigned to the corresponding agent. Status: ${response.status}`;
+  stateStore.addLog("Supervisor", req, response);
+  
+  return response;
 }
